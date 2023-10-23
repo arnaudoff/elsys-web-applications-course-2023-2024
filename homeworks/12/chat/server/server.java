@@ -27,8 +27,8 @@ public class server {
 
                     new Thread(() -> {
                         try {
+                            BufferedReader in = inList.get(inList.size() - 1);
                             while (true) {
-                                BufferedReader in = inList.get(inList.size() - 1);
 
                                 String clientMsg = in.readLine();
                                 if (clientMsg == null) {
@@ -48,6 +48,9 @@ public class server {
                                     }
                                 }
                             }
+
+                            inList.remove(inList.indexOf(in));
+                            outList.remove(outList.indexOf(outList.get(inList.indexOf(in))));
 
                             clientSocket.close();
                             System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
