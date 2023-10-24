@@ -54,7 +54,6 @@ public class Server {
                     } else if (nickname != null) {
                         broadcast("[" + nickname + "]: " + inputLine);
                     } else {
-                        // Print the nickname when a client sends a regular message
                         out.println("[" + nickname + "]: " + inputLine);
                     }
                 }
