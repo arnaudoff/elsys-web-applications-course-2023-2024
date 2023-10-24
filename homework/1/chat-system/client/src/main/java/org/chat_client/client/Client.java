@@ -17,7 +17,9 @@ public class Client {
             while (!socket.isClosed() && (data = bufferedReader.readLine()) != null) {
                 System.out.println(data);
             }
-            close();
+            if (data == null) {
+                close();
+            }
         } catch (IOException ioe) {
             close();
         }
