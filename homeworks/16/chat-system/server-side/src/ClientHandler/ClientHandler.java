@@ -1,21 +1,22 @@
 package ClientHandler;
 
+import Server.Server;
+
 import java.io.*;
 import java.net.Socket;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Objects;
 
 public class ClientHandler implements Runnable {
-    private static final ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
+    private Server server;
     private Socket socket;
     private BufferedReader reader;
     private BufferedWriter writer;
     private Client client;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Server server, Socket socket) {
         try {
+            this.server = server;
+
             this.socket = socket;
             this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -23,12 +24,7 @@ public class ClientHandler implements Runnable {
             String username = reader.readLine();
             this.client = new Client(Objects.requireNonNullElse(username, "Anonymous"));
 
-            synchronized (clientHandlers) {
-                clientHandlers.add(this);
-            }
-
-            System.out.println(client.name() + " has joined the chat.");
-            broadcast("Server", client.name() + " has joined the chat.");
+            server.addClientHandler(this);
         } catch (IOException e) {
             cleanResources();
         }
@@ -40,7 +36,7 @@ public class ClientHandler implements Runnable {
             String message;
 
             while ((message = reader.readLine()) != null) {
-                broadcast(client.name(), message);
+                server.broadcast(client.name(), message);
             }
         } catch (IOException ignored) {
         } finally {
@@ -48,42 +44,18 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void broadcast(String sender, String message) {
-        synchronized (clientHandlers) {
-            for (ClientHandler clientHandler : clientHandlers) {
-                try {
-                    if (!clientHandler.client.name().equals(client.name())) {
-                        String formattedMessage = String.format("[%s] %s: %s", getFormattedTime(), sender, message);
-
-                        clientHandler.writer.write(formattedMessage);
-                        clientHandler.writer.newLine();
-                        clientHandler.writer.flush();
-                    }
-                } catch (IOException e) {
-                    cleanResources();
-                }
-            }
+    public void sendMessage(String message) {
+        try {
+            writer.write(message);
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            cleanResources();
         }
     }
 
-    private String getFormattedTime() {
-        LocalTime currentTime = LocalTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
-        return currentTime.format(formatter);
-    }
-
-    private void removeClientHandler() {
-        synchronized (clientHandlers) {
-            if (clientHandlers.contains(this)) {
-                clientHandlers.remove(this);
-                System.out.println(client.name() + " has left the chat.");
-                broadcast("Server", client.name() + " has left the chat.");
-            }
-        }
-    }
-
-    private void cleanResources() {
-        removeClientHandler();
+    public void cleanResources() {
+        server.removeClientHandler(this);
 
         try {
             if (socket != null) {
@@ -100,5 +72,9 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Client getClient() {
+        return client;
     }
 }
