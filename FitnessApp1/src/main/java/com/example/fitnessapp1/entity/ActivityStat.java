@@ -17,15 +17,15 @@ public class ActivityStat {
     @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
     private User user;
 
-    @Column(name = "date", nullable = false, columnDefinition = "DATE")
+    @Column(name = "date", nullable = false)
     private LocalDate date;
 
-    @Column(name = "steps", nullable = false, columnDefinition = "INTEGER")
+    @Column(name = "steps", nullable = false)
     private Integer steps;
 
-    @Column(name = "calories_consumed", nullable = false, columnDefinition = "INTEGER")
+    @Column(name = "calories_consumed", nullable = false)
     private Integer calories;
 
-    @Column(name = "water", nullable = false, columnDefinition = "NUMERIC(3, 1)")
+    @Column(name = "water", nullable = false)
     private Float water;
 }

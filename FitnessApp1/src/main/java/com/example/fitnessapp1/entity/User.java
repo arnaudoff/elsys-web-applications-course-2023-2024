@@ -25,10 +25,10 @@ public class User implements UserDetails {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "username", unique = true, nullable = false, columnDefinition = "VARCHAR(16)")
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
-    @Column(name = "password", nullable = false, columnDefinition = "VARCHAR(64)")
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)

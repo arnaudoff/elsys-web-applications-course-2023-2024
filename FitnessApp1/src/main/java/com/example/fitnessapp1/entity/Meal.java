@@ -13,25 +13,25 @@ public class Meal {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name", unique = true, nullable = false, columnDefinition = "VARCHAR(32)")
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
 
     // per 100g
-    @Column(name = "calories", nullable = false, columnDefinition = "INTEGER")
+    @Column(name = "calories", nullable = false)
     private Integer calories;
 
-    @Column(name = "protein", nullable = false, columnDefinition = "NUMERIC(5, 2)")
+    @Column(name = "protein", nullable = false)
     private Float protein;
 
-    @Column(name = "carbs", nullable = false, columnDefinition = "NUMERIC(5, 2)")
+    @Column(name = "carbs", nullable = false)
     private Float carbs;
 
-    @Column(name = "fat", nullable = false, columnDefinition = "NUMERIC(5, 2)")
+    @Column(name = "fat", nullable = false)
     private Float fat;
 
-    @Column(name = "fiber", nullable = false, columnDefinition = "NUMERIC(5, 2)")
+    @Column(name = "fiber", nullable = false)
     private Float fiber;
 
-    @Column(name = "sugar", nullable = false, columnDefinition = "NUMERIC(5, 2)")
+    @Column(name = "sugar", nullable = false)
     private Float sugar;
 }
