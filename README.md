@@ -1,1 +1,1 @@
-# elsys-web-applications-course-2023-2024
+# Semester project for web development 2023 - 2024
