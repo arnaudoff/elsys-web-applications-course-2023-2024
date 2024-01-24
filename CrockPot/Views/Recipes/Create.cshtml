@@ -1,0 +1,114 @@
+﻿@model CrockPot.Models.Recipe
+@using CrockPot.Data
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Recipe</h4>
+<hr>
+<div>
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <div>
+            <label asp-for="Name"></label>
+            <br>
+            <input class="input-box" asp-for="Name" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div>
+            <label asp-for="Description" class="control-label"></label>
+            <br>
+            <input class="input-box" asp-for="Description" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div>
+            <label>Select Ingredients</label>
+            <br>
+            <input class="input-box" type="text" placeholder="Search..." id="ingredientsSearch">
+            <div class="scrollable-container">
+                @foreach (var ingredient in ViewBag.allIngredients)
+                {
+                    <div>
+                        <input type="checkbox" name="selectedIngredients" value="@ingredient.Id">
+                        <label>@ingredient.Name</label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div>
+            <label>Select Categories</label>
+            <br />
+            <input class="input-box" type="text" placeholder="Search..." id="categoriesSearch">
+            <div class="scrollable-container">
+                @foreach (var category in ViewBag.allCategories)
+                {
+                    <div>
+                        <input type="checkbox" name="selectedCategories" value="@category.Id">
+                        <label>@category.Name</label>
+                    </div>
+                }
+            </div>
+        </div>
+        <br />
+
+        <div>
+            <label for="imageFile">Upload Image</label>
+            <input type="file" name="imageFile" accept="image/*" />
+        </div>
+
+        <div>
+            <input class="button-big" type="submit" value="Create" />
+        </div>
+    </form>
+</div>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        function filterCategoriesCheckboxes() {
+            var searchCategoryValue = document.getElementById("categoriesSearch").value.toLowerCase();
+            var categoryCheckboxes = document.querySelectorAll('input[name="selectedCategories"]');
+
+            categoryCheckboxes.forEach(function (checkbox) {
+                var label = checkbox.nextElementSibling;
+                var categoryName = label.textContent.toLowerCase();
+
+                if (categoryName.includes(searchCategoryValue)) {
+                    checkbox.parentNode.style.display = 'block';
+                } else {
+                    checkbox.parentNode.style.display = 'none';
+                }
+            });
+        }
+
+        function filterIngredientsCheckboxes() {
+            var searchIngredientValue = document.getElementById("ingredientsSearch").value.toLowerCase();
+            var ingredientCheckboxes = document.querySelectorAll('input[name="selectedIngredients"]');
+
+            ingredientCheckboxes.forEach(function (checkbox) {
+                var label = checkbox.nextElementSibling;
+                var ingredientName = label.textContent.toLowerCase();
+
+                if (ingredientName.includes(searchIngredientValue)) {
+                    checkbox.parentNode.style.display = 'block';
+                } else {
+                    checkbox.parentNode.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById("categoriesSearch").addEventListener("input", filterCategoriesCheckboxes);
+
+        document.getElementById("ingredientsSearch").addEventListener("input", filterIngredientsCheckboxes);
+    </script>
+}
+
