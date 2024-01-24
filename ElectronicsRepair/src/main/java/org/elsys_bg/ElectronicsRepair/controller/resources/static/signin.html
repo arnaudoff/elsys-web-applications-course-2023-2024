@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="OOP webapp sign in page" content="OOP">
+        <meta name="keywords" content="HTML, CSS, JavaScript, Java">
+        <meta name="OOP" content="OOP">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sign in form</title>
+
+        <script>
+            let userRole = "__USER_ROLE__";
+            let signUpFormId = "signup-form";
+            let signUpFormUsernameId = "signup-username";
+            let signUpFormPasswordId = "signup-password";
+            let signUpFormEmailId = "signup-email";
+            let signUpFormTelId = "signup-tel";
+            let logInFormId = "login-form";
+            let logInFormUsernameId = "login-username";
+            let logInFormPasswordId = "login-password";
+
+            function initialize(){
+                const loginForm = document.getElementById(logInFormId);
+                const signupForm = document.getElementById(signUpFormId);
+                const switchToSignupLink = document.getElementById("switch-to-signup");
+                const switchToLoginLink = document.getElementById("switch-to-login");
+
+                document.getElementById("sign-in-form-title").innerHTML = "Sign in form for " + userRole + "s";
+                if(userRole == "worker" || userRole == "admin"){
+                    const switchButtons = document.getElementsByClassName("switch-form");
+
+                    signupForm.style.deisplay = "none";
+                    for(let i = 0; i < switchButtons.length; i++)
+                        switchButtons.item(i).style.display= "none";
+                }
+
+                switchToSignupLink.addEventListener("click", function(event){
+                    event.preventDefault();
+                    loginForm.style.display = "none";
+                    signupForm.style.display = "block";
+                });
+
+                switchToLoginLink.addEventListener("click", function(event){
+                    event.preventDefault();
+                    loginForm.style.display = "block";
+                    signupForm.style.display = "none";
+                });
+
+                document.getElementById(signUpFormId).addEventListener("submit", function(event){
+                    event.preventDefault();
+
+                    let username = document.getElementById(signUpFormUsernameId).value;
+                    let password = document.getElementById(signUpFormPasswordId).value;
+                    let email = document.getElementById(signUpFormEmailId).value;
+                    let tel = document.getElementById(signUpFormTelId).value;
+
+                    if(checkForSQLInjections(username,password)){
+                        window.alert("Incorrect input");
+                    }else if(userExists(username)){
+                        window.alert("The given username is already taken");
+                    }else{
+                        const xhr = new XMLHttpRequest();
+                        let userCredentials = {
+                            user:username,
+                            pass:password,
+                            email:email,
+                            tel:tel
+                        };
+                        let userData = JSON.stringify(userCredentials);
+
+                        xhr.open('POST', '/api/v1/clients/client_signup', true);
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                        xhr.onload = function(){
+                            if(this.readyState == 4 && this.status == 200){
+                                switch(this.responseText){
+                                    case "USER_SIGNED_UP":
+                                        let url = "/api/v1/clients/client_homepage?username=" + encodeURIComponent(username);
+                                        window.location.href = url;
+                                        return;
+                                    default:
+                                        console.log("ERROR RECEIVED: " + this.responseText);
+                                        window.alert(this.responseText);
+                                }
+                            }
+                        };
+                        xhr.send(userData);
+                    }
+                });
+                document.getElementById(logInFormId).addEventListener("submit", function(event){
+                    event.preventDefault();
+
+                    let username = document.getElementById(logInFormUsernameId).value;
+                    let password = document.getElementById(logInFormPasswordId).value;
+
+                    if(checkForSQLInjections(username,password)){
+                        window.alert("Incorrect input");
+                    }else if(userExists(username,password,userRole) == false){
+                        window.alert(userRole + " " + username + " does not exist");
+                    }else{
+                        const xhr = new XMLHttpRequest();
+                        let userCredentials = {
+                            user:username,
+                            pass:password
+                        };
+                        let userData = JSON.stringify(userCredentials);
+
+                        if(userRole == "client"){
+                            xhr.open('POST', '/api/v1/clients/client_login', true);
+                        }else if(userRole == "worker"){
+                            xhr.open('POST', '/api/v1/workers/worker_login', true);
+                        }else if(userRole == "admin"){
+                            xhr.open('POST', '/api/v1/admins/admin_login', true);
+                        }
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                        xhr.onload = function(){
+                            if(this.readyState == 4 && this.status == 200){
+                                switch(this.responseText){
+                                    case "USER_LOGGED_IN":
+                                        let url = "";
+
+                                        if(userRole == "client"){
+                                            url = "/api/v1/clients/client_homepage";
+                                        }else if(userRole == "worker"){
+                                            url = "/api/v1/workers/worker_homepage";
+                                        }else if(userRole == "admin"){
+                                            url = "/api/v1/admins/admin_homepage";
+                                        }
+
+                                        url += "?username=" + encodeURIComponent(username);
+                                        window.location.href = url;
+                                        return;
+                                    default:
+                                        window.alert(this.responseText);
+                                        break;
+                                }
+                            }
+                        };
+                        xhr.send(userData);
+                    }
+                });
+            }
+
+            function checkForSQLInjections(username,password){
+                const xhr = new XMLHttpRequest();
+                let userCredentials = {
+                    user:username,
+                    pass:password
+                };
+                let userData = JSON.stringify(userCredentials);
+
+                xhr.open('POST', '/api/v1/check_sql_injections', false);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onload = function(){
+                    if(this.readyState == 4 && this.status == 200){
+                        switch(this.responseText){
+                            case "INJECTIONS":
+                                return true;
+                                break;
+                            case "NO_INJECTIONS":
+                                return false;
+                                break;
+                            default:
+                                window.alert("Error in function checkForSQLInjections() (" + this.responseText + ") (" + this.response + ")");
+                        }
+                    }
+                };
+
+                xhr.send(userData);
+            }
+
+            function userExists(username,password,role){
+                const xhr = new XMLHttpRequest();
+                let userCredentials = {
+                    user:username,
+                };
+                let userData = JSON.stringify(userCredentials);
+
+                if(role == "client"){
+                    xhr.open('POST', '/api/v1/clients/client_exists', false);
+                }else if(role == "worker"){
+                    xhr.open('POST', '/api/v1/workers/worker_exists', false);
+                }else{
+                    xhr.open('POST', '/api/v1/admins/admin_exists', false);
+                }
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onload = function(){
+                    if(this.readyState == 4 && this.status == 200){
+                        switch(this.responseText){
+                            case "USER_EXISTS":
+                                return true;
+                                break;
+                            case "USER_NOT_EXISTS":
+                                return false;
+                                break;
+                            default:
+                                window.alert("Error in function userExists()");
+                        }
+                    }
+                };
+
+                xhr.send(userData);
+            }
+
+            function convertToHTMLString(data){
+                const codes = JSON.stringify(data).split(',');
+                const bytes = new Uint8Array(codes.length);
+
+                for(let i = 0; i < codes.length; i++){
+                    bytes[i] = parseInt(codes[i]);
+                }
+
+                const decoder = new TextDecoder();
+                const htmlString = decoder.decode(bytes);
+
+                return htmlString;
+            }
+        </script>
+
+        <style>
+            body {
+                background-color: black;
+                /*background-color: #f2f2f2;*/
+                font-family: Arial, sans-serif;
+            }
+
+            .container {
+                margin: 50px auto;
+                width: 400px;
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            }
+
+            h2 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            input[type="tel"]{
+                width: 100%;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+
+            button[type="submit"] {
+                background-color: #4CAF50;
+                color: #fff;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+
+            button[type="submit"]:hover {
+                background-color: #3e8e41;
+            }
+
+            .switch-form {
+                margin-top: 20px;
+                text-align: center;
+            }
+
+            .switch-form a {
+                color: #4CAF50;
+                text-decoration: none;
+                font-weight: bold;
+                margin-left: 5px;
+                margin-right: 5px;
+            }
+        </style>
+    </head>
+    <body onload="initialize()">
+        <div class="container">
+            <h2 id="sign-in-form-title"></h2>
+            <form id="login-form">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" name="login-username" required>
+
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" name="login-password" required>
+
+                <button type="submit">Login</button>
+            </form>
+            <form id="signup-form" style="display:none">
+                <label for="signup-username">Username</label>
+                <input type="text" id="signup-username" name="signup-username" required>
+
+                <label for="signup-password">Password</label>
+                <input type="password" id="signup-password" name="signup-password" required>
+
+                <label for="signup-email">Email</label>
+                <!--<input type="email" id="signup-email" name="signup-email" required>-->
+                <input type="email" id="signup-email" name="signup-email" required>
+
+                <label for="signup-tel">Telephone number</label>
+                <input type="tel" id="signup-tel" name="signup-tel" required>
+
+                <button type="submit">Sign Up</button>
+            </form>
+            <div class="switch-form">
+                <span>Don't have an account?</span>
+                <a href="#" id="switch-to-signup">Sign up</a>
+            </div>
+            <div class="switch-form">
+                <span>Already have an account?</span>
+                <a href="#" id="switch-to-login">Login</a>
+            </div>
+        </div>
+    </body>
+</html>

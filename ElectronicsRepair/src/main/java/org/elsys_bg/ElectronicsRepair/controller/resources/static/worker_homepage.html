@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="OOP webapp worker homepage" content="OOP">
+    <meta name="keywords" content="HTML, CSS, JavaScript, Java">
+    <meta name="OOP" content="OOP">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker Homepage</title>
+
+    <script>
+      let workerName = "__WORKER_NAME__";
+      let ordersTableId = "order-table";
+      let ordersTable;
+
+      function initialize(){
+        ordersTable = document.getElementById(ordersTableId);
+      }
+
+      function finishRow(id){
+        const xhr = new XMLHttpRequest();
+        let row = document.getElementById('order-table').querySelector('tr[data-id="' + id + '"]');
+
+        let data = {
+          orderId:id
+        };
+        let postData = JSON.stringify(data);
+
+        xhr.open('PUT', '/api/v1/orders/finish_order', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            switch(this.responseText){
+              case "ORDER_FINISHED":
+                if(row){
+                  row.parentNode.removeChild(row);
+                }else{
+                  window.alert("ERR: Could not find order with id = " + id);
+                }
+                window.alert("Order was finished");
+                break;
+              case "ORDER_NOT_FINISHED":
+                window.alert("ERR: Status of order wasn't changed");
+                break;
+              default:
+                window.alert(this.responseText);
+            }
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send(postData);
+      }
+
+      function removeOrders(){
+        ordersTable.innerHTML = "";
+      }
+
+      function addHeadingRow(){
+        let headingRow = ordersTable.insertRow();
+
+        let orderIdTh = document.createElement("th");
+        orderIdTh.innerText = "Order Id";
+        headingRow.appendChild(orderIdTh);
+
+        let deviceTypeTh = document.createElement("th");
+        deviceTypeTh.innerText = "Device Type";
+        headingRow.appendChild(deviceTypeTh);
+
+        let deviceManufacturerTh = document.createElement("th");
+        deviceManufacturerTh.innerText = "Device Manufacturer";
+        headingRow.appendChild(deviceManufacturerTh);
+
+        let deviceModelTh = document.createElement("th");
+        deviceModelTh.innerText = "Device Model";
+        headingRow.appendChild(deviceModelTh);
+
+        let orderDescriptionTh = document.createElement("th");
+        orderDescriptionTh.innerText = "Order Description";
+        headingRow.appendChild(orderDescriptionTh);
+
+        let orderStatusTh = document.createElement("th");
+        orderStatusTh.innerText = "Order Status";
+        headingRow.appendChild(orderStatusTh);
+
+        let statusChangeTh = document.createElement("th");
+        statusChangeTh.innerText = "Status Change";
+        headingRow.appendChild(statusChangeTh);
+      }
+
+      function addRow(orderId, deviceType, deviceManufacturer, deviceModel, orderDescription, orderStatus){
+        let table = ordersTable;
+
+        let newRow = table.insertRow();
+        newRow.setAttribute('data-id', orderId);
+
+        let idCell = newRow.insertCell();
+        idCell.appendChild(document.createTextNode(orderId));
+
+        let deviceTypeCell = newRow.insertCell();
+        deviceTypeCell.appendChild(document.createTextNode(deviceType));
+
+        let manufacturerCell = newRow.insertCell();
+        manufacturerCell.appendChild(document.createTextNode(deviceManufacturer));
+
+        let modelCell = newRow.insertCell();
+        modelCell.appendChild(document.createTextNode(deviceModel));
+
+        let descriptionCell = newRow.insertCell();
+        descriptionCell.appendChild(document.createTextNode(orderDescription));
+
+        let statusCell = newRow.insertCell();
+        statusCell.appendChild(document.createTextNode(orderStatus));
+
+        let actionCell = newRow.insertCell();
+        let button = document.createElement('button');
+        button.textContent = 'Finish';
+        button.addEventListener('click', function() {
+          finishRow(orderId);
+        });
+        actionCell.appendChild(button);
+      }
+
+      function loadUnfinishedOrders(){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', '/api/v1/orders/get_unfinished_orders', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            removeOrders();
+            addHeadingRow();
+
+            this.responseText.split("-;-;-").forEach(order => {
+              let orderSegments = order.split("---");
+              let orderId = orderSegments[0];
+              let deviceType = orderSegments[1];
+              let deviceManufacturer = orderSegments[2];
+              let deviceModel = orderSegments[3];
+              let orderDescription = orderSegments[4];
+              let orderStatus = orderSegments[5];
+
+              addRow(orderId, deviceType, deviceManufacturer, deviceModel, orderDescription, orderStatus);
+            });
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send();
+      }
+
+      function loadAllOrders(){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', '/api/v1/orders/getAll', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            removeOrders();
+            addHeadingRow();
+
+            this.responseText.split("-;-;-").forEach(order => {
+              let orderSegments = order.split("---");
+              let orderId = orderSegments[0];
+              let deviceType = orderSegments[1];
+              let deviceManufacturer = orderSegments[2];
+              let deviceModel = orderSegments[3];
+              let orderDescription = orderSegments[4];
+              let orderStatus = orderSegments[5];
+
+              addRow(orderId, deviceType, deviceManufacturer, deviceModel, orderDescription, orderStatus);
+            });
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send();
+      }
+    </script>
+
+    <style>
+      body{
+        background-color: #f2f2f2;
+      }
+
+      #table-div{
+        position: absolute;
+        width: 80%;
+        height: 40%;
+        left: 10%;
+        top: 5%;
+        overflow-y: scroll;
+        border: 1px solid lightgray;
+        border-radius: 5px;
+        background-color: beige;
+      }
+
+      #control-panel{
+        position: absolute;
+        width: 80%;
+        height: 40%;
+        left: 10%;
+        bottom: 5%;
+        border: 1px solid lightgray;
+        border-radius: 5px;
+        background-color: beige;
+      }
+
+      #order-table{
+        border: 1px solid darkgray;
+        background: white;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      tr:hover {
+        background-color: #f5f5f5;
+      }
+
+      button {
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-align: center;
+        background-color: #4CAF50;
+        color: #fff;
+        text-decoration: none;
+      }
+
+      button:hover{
+        background-color: #6CCF70;
+        text-shadow: 1px 1px 1px black;
+      }
+
+      #load-unfinished-orders{
+        position: absolute;
+        width: 20vw;
+        height: 4vh;
+        top: 2vh;
+        left: 2vh;
+      }
+
+      #load-all-orders{
+        position: absolute;
+        width: 20vw;
+        height: 4vh;
+        top: 8vh;
+        left: 2vh;
+      }
+
+      #remove-orders{
+        position: absolute;
+        width: 20vw;
+        height: 4vh;
+        top: 14vh;
+        left: 2vh;
+      }
+    </style>
+  </head>
+  <body onload="initialize()">
+    <div id="table-div">
+      <table id="order-table"></table>
+    </div>
+
+    <div id="control-panel">
+      <button id="load-unfinished-orders" onclick="loadUnfinishedOrders()">Load unfinished orders</button>
+      <button id="load-all-orders" onclick="loadAllOrders()">Load all orders</button>
+      <button id="remove-orders" onclick="removeOrders()">Remove orders</button>
+    </div>
+  </body>
+</html>

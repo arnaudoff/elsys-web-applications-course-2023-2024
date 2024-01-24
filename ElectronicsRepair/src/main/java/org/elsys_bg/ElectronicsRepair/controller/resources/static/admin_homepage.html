@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="OOP webapp admin homepage" content="OOP">
+    <meta name="keywords" content="HTML, CSS, JavaScript, Java">
+    <meta name="OOP" content="OOP">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Homepage</title>
+
+    <script>
+      let workerPostFormId = "worker-post-form";
+      let workerFormId = "worker-form";
+      let deviceTypeFormId = "device-type-form";
+      let deviceManufacturerFormId = "device-manufacturer-form";
+      let ordersTableId = "orders-table";
+      let ordersByDateFormId = "orders-by-date";
+      let ordersDatetimeId = "orders-datetime";
+      let workerPostForm;
+      let workerForm;
+      let deviceTypeForm;
+      let deviceManufacturerForm;
+      let ordersTable;
+      let ordersByDateForm;
+
+      function initialize(){
+        workerPostForm = document.getElementById(workerPostFormId);
+        workerForm = document.getElementById(workerFormId);
+        deviceTypeForm = document.getElementById(deviceTypeFormId);
+        deviceManufacturerForm = document.getElementById(deviceManufacturerFormId);
+        ordersTable = document.getElementById(ordersTableId);
+        ordersByDateForm = document.getElementById(ordersByDateFormId);
+
+        loadWorkerPosts();
+        loadDeviceTypes();
+
+        workerPostForm.addEventListener("submit", function(event){
+          event.preventDefault();
+
+          let workerPost = document.getElementById("workerPost").value;
+
+          if(checkStringForSQLInjection(workerPost)){
+            window.alert("ERR: Worker post string contains sql injections");
+          }else{
+            const xhr = new XMLHttpRequest();
+
+            let data = {
+              workerPost:workerPost
+            };
+            let postData = JSON.stringify(data);
+
+            xhr.open('POST', '/api/v1/worker_posts/add_worker_post', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onload = function(){
+              if(this.readyState == 4 && this.status == 200){
+                switch(this.responseText){
+                  case "WORKER_POST_ADDED":
+                    loadWorkerPosts();
+                    window.alert("Worker post \"" + workerPost + "\" added to system");
+                    break;
+                  default:
+                    console.log("ERROR RECEIVED: " + this.responseText);
+                    window.alert(this.responseText);
+                }
+              }
+            };
+
+            xhr.send(postData);
+          }
+        });
+
+        workerForm.addEventListener("submit", function(event){
+          event.preventDefault();
+
+          let workerName = document.getElementById("workerName").value;
+          let workerPassword = document.getElementById("workerPassword").value;
+          let workerPost = document.getElementById("worker-post").value;
+
+          if(checkStringForSQLInjection(workerPost)){
+            window.alert("ERR: Worker post string contains sql injections");
+          }else if(checkForSQLInjections(workerName, workerPassword)){
+            window.alert("ERR: Worker credentials contain sql injections");
+          }else{
+            const xhr = new XMLHttpRequest();
+
+            let workerCredentials = {
+              workerName:workerName,
+              workerPassword:workerPassword,
+              workerPost:workerPost
+            };
+            let workerData = JSON.stringify(workerCredentials);
+
+            xhr.open('POST', '/api/v1/workers/add_worker', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onload = function(){
+              if(this.readyState == 4 && this.status == 200){
+                switch(this.responseText){
+                  case "WORKER_ADDED":
+                    window.alert("Worker \"" + workerName + "\" added to system");
+                    break;
+                  default:
+                    console.log("ERROR RECEIVED: " + this.responseText);
+                    window.alert(this.responseText);
+                }
+              }
+            };
+
+            xhr.send(workerData);
+          }
+        });
+
+        deviceTypeForm.addEventListener("submit", function(event){
+          event.preventDefault();
+
+          let deviceType = document.getElementById("deviceType").value;
+
+          if(checkStringForSQLInjection(deviceType)){
+            window.alert("ERR: Device type string contains sql injections");
+          }else{
+            const xhr = new XMLHttpRequest();
+
+            let data = {
+              deviceType:deviceType
+            };
+            let postData = JSON.stringify(data);
+
+            xhr.open('POST', '/api/v1/device_types/add_device_type', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onload = function(){
+              if(this.readyState == 4 && this.status == 200){
+                switch(this.responseText){
+                  case "DEVICE_TYPE_ADDED":
+                    loadDeviceTypes();
+                    window.alert("Device type \"" + deviceType + "\" added to system");
+                    break;
+                  default:
+                    console.log("ERROR RECEIVED: " + this.responseText);
+                    window.alert(this.responseText);
+                }
+              }
+            };
+
+            xhr.send(postData);
+          }
+        });
+
+        deviceManufacturerForm.addEventListener("submit", function(event){
+          event.preventDefault();
+
+          let deviceManufacturer = document.getElementById("device-manufacturer").value;
+          let deviceType = document.getElementById("device-type").value;
+
+          if(checkStringForSQLInjection(deviceManufacturer)){
+            window.alert("ERR: Device manufacturer string contains sql injections");
+          }else if(checkStringForSQLInjection(deviceType)){
+            window.alert("ERR: Device type string contains sql injections");
+          }else{
+            const xhr = new XMLHttpRequest();
+
+            let data = {
+              deviceType:deviceType,
+              deviceManufacturer:deviceManufacturer
+            };
+            let postData = JSON.stringify(data);
+
+            xhr.open('POST', '/api/v1/supported_devices/add_supported_device_for_repair', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onload = function(){
+              if(this.readyState == 4 && this.status == 200){
+                switch(this.responseText){
+                  case "SUPPORTED_DEVICE_ADDED":
+                    window.alert("Device manufacturer \"" + deviceManufacturer + "\" added to system");
+                    break;
+                  default:
+                    console.log("ERROR RECEIVED: " + this.responseText);
+                    window.alert(this.responseText);
+                }
+              }
+            };
+
+            xhr.send(postData);
+          }
+        });
+
+        ordersByDateForm.addEventListener("submit", function(event){
+          event.preventDefault();
+
+          let timestamp = document.getElementById(ordersDatetimeId).value;
+          let data = {
+            timestamp:timestamp
+          };
+          let postData = JSON.stringify(data);
+
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/v1/order_audit/get_orders_after_datetime', false);
+          xhr.onload = function(){
+            if(this.readyState == 4 && this.status == 200){
+              ordersTable.innerHTML = "";
+              addHeadingRow();
+
+              this.responseText.split("-;-;-").forEach(order => {
+                let orderSegments = order.split("---");
+                let orderId = orderSegments[0];
+                let clientName = orderSegments[1];
+                let deviceType = orderSegments[2];
+                let deviceManufacturer = orderSegments[3];
+                let deviceModel = orderSegments[4];
+                let orderDescription = orderSegments[5];
+                let orderStatus = orderSegments[6];
+                let action = orderSegments[7];
+                let timestamp = orderSegments[8];
+
+                addRow(orderId, clientName, deviceType, deviceManufacturer, deviceModel,
+                        orderDescription, orderStatus, action, timestamp);
+              });
+            }else if(this.status == 500){
+              window.alert("ERR: " + this.responseText);
+            }
+          };
+
+          xhr.send(postData);
+        });
+      }
+
+      function loadFinishedOrders(){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', '/api/v1/order_audit/get_finished', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            removeOrders();
+            addHeadingRow();
+
+            this.responseText.split("-;-;-").forEach(order => {
+              let orderSegments = order.split("---");
+              let orderId = orderSegments[0];
+              let clientName = orderSegments[1];
+              let deviceType = orderSegments[2];
+              let deviceManufacturer = orderSegments[3];
+              let deviceModel = orderSegments[4];
+              let orderDescription = orderSegments[5];
+              let orderStatus = orderSegments[6];
+              let action = orderSegments[7];
+              let timestamp = orderSegments[8];
+
+              addRow(orderId, clientName, deviceType, deviceManufacturer, deviceModel,
+                      orderDescription, orderStatus, action, timestamp);
+            });
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send();
+      }
+
+      function removeOrders(){
+        ordersTable.innerHTML = "";
+      }
+
+      function addHeadingRow(){
+        let headingRow = ordersTable.insertRow();
+
+        let orderIdTh = document.createElement("th");
+        orderIdTh.innerText = "Order Id";
+        headingRow.appendChild(orderIdTh);
+
+        let clientNameTh = document.createElement("th");
+        clientNameTh.innerText = "Client";
+        headingRow.appendChild(clientNameTh);
+
+        let deviceTypeTh = document.createElement("th");
+        deviceTypeTh.innerText = "Device Type";
+        headingRow.appendChild(deviceTypeTh);
+
+        let deviceManufacturerTh = document.createElement("th");
+        deviceManufacturerTh.innerText = "Device Manufacturer";
+        headingRow.appendChild(deviceManufacturerTh);
+
+        let deviceModelTh = document.createElement("th");
+        deviceModelTh.innerText = "Device Model";
+        headingRow.appendChild(deviceModelTh);
+
+        let orderDescriptionTh = document.createElement("th");
+        orderDescriptionTh.innerText = "Order Description";
+        headingRow.appendChild(orderDescriptionTh);
+
+        let orderStatusTh = document.createElement("th");
+        orderStatusTh.innerText = "Order Status";
+        headingRow.appendChild(orderStatusTh);
+
+        let actionTh = document.createElement("th");
+        actionTh.innerText = "Action";
+        headingRow.appendChild(actionTh);
+
+        let timestampTh = document.createElement("th");
+        timestampTh.innerText = "Timestamp";
+        headingRow.appendChild(timestampTh);
+      }
+
+      function addRow(orderId, clientName, deviceType, deviceManufacturer, deviceModel, orderDescription, orderStatus, action, timestamp){
+        let table = ordersTable;
+
+        let newRow = table.insertRow();
+        newRow.setAttribute('data-id', orderId);
+
+        let idCell = newRow.insertCell();
+        idCell.appendChild(document.createTextNode(orderId));
+
+        let clientNameCell = newRow.insertCell();
+        clientNameCell.appendChild(document.createTextNode(clientName));
+
+        let deviceTypeCell = newRow.insertCell();
+        deviceTypeCell.appendChild(document.createTextNode(deviceType));
+
+        let manufacturerCell = newRow.insertCell();
+        manufacturerCell.appendChild(document.createTextNode(deviceManufacturer));
+
+        let modelCell = newRow.insertCell();
+        modelCell.appendChild(document.createTextNode(deviceModel));
+
+        let descriptionCell = newRow.insertCell();
+        descriptionCell.appendChild(document.createTextNode(orderDescription));
+
+        let statusCell = newRow.insertCell();
+        statusCell.appendChild(document.createTextNode(orderStatus));
+
+        let actionCell = newRow.insertCell();
+        actionCell.appendChild(document.createTextNode(action));
+
+        let timestampCell = newRow.insertCell();
+        timestampCell.appendChild(document.createTextNode(timestamp));
+      }
+
+      function loadWorkerPosts(){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', '/api/v1/worker_posts/getAll', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            let workerPostMenu = document.getElementById("worker-post");
+
+            workerPostMenu.innerHTML = "";
+            this.responseText.split(";").forEach(workerPost => {
+              if(workerPost != ""){
+                let workerPostOption = document.createElement("option");
+                workerPostOption.text = workerPost;
+                workerPostOption.value = workerPost;
+                workerPostMenu.add(workerPostOption);
+              }
+            });
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send();
+      }
+
+      function loadDeviceTypes(){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', '/api/v1/device_types/getAll', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            let deviceTypeMenu = document.getElementById("device-type");
+
+            deviceTypeMenu.innerHTML = "";
+            this.responseText.split(";").forEach(deviceType => {
+              if(deviceType != ""){
+                let deviceTypeOption = document.createElement("option");
+                deviceTypeOption.text = deviceType;
+                deviceTypeOption.value = deviceType;
+                deviceTypeMenu.add(deviceTypeOption);
+              }
+            });
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send();
+      }
+
+      function checkStringForSQLInjection(string){
+        const xhr = new XMLHttpRequest();
+        let data = {
+          string:string,
+        };
+        let postData = JSON.stringify(data);
+
+        xhr.open('POST', '/api/v1/check_string_sql_injections', false);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            switch(this.responseText){
+              case "INJECTIONS":
+                return true;
+                break;
+              case "NO_INJECTIONS":
+                return false;
+                break;
+              default:
+                window.alert("Error: " + this.responseText);
+            }
+          }
+        };
+
+        xhr.send(postData);
+      }
+
+      function checkForSQLInjections(username,password){
+        const xhr = new XMLHttpRequest();
+        let userCredentials = {
+          user:username,
+          pass:password
+        };
+        let userData = JSON.stringify(userCredentials);
+
+        xhr.open('POST', '/api/v1/check_sql_injections', false);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            switch(this.responseText){
+              case "INJECTIONS":
+                return true;
+                break;
+              case "NO_INJECTIONS":
+                return false;
+                break;
+              default:
+                window.alert("Error in function checkForSQLInjections() (" + this.responseText + ") (" + this.response + ")");
+            }
+          }
+        };
+
+        xhr.send(userData);
+      }
+    </script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+        padding: 20px;
+      }
+
+      h1 {
+        text-align: left;
+      }
+
+      form {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-bottom: 20px;
+        max-width: 400px;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 10px;
+        margin-top: 10px;
+      }
+
+      input[type="text"],
+      input[type="submit"] {
+        width: 95%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      input[type="submit"] {
+        background-color: #4CAF50;
+        color: #fff;
+        cursor: pointer;
+        width: auto;
+        margin-left: 0;
+        margin-right: 0;
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+
+      #orders-div{
+        position: absolute;
+        width: 60%;
+        height: 45%;
+        right: 5%;
+        top: 5%;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: beige;
+        overflow-y: scroll;
+      }
+
+      #control-panel{
+        position: absolute;
+        width: 60%;
+        height: 35%;
+        right: 5%;
+        top: 60%;
+
+        display: flex;
+        flex-direction: row;
+
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: beige;
+      }
+
+      #orders-by-date{
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        background-color: floralwhite;
+      }
+
+      #finished-orders-div{
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        background-color: floralwhite;
+      }
+
+      table{
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td{
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      tr:hover{
+        background-color: #f5f5f5;
+      }
+
+      button{
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-align: center;
+        background-color: #4CAF50;
+        color: #fff;
+        text-decoration: none;
+      }
+
+      button:hover{
+        background-color: #6CCF70;
+        text-shadow: 1px 1px 1px black;
+      }
+    </style>
+  </head>
+  <body onload="initialize()">
+    <h1>Worker Management</h1>
+
+    <form id="worker-post-form">
+      <h2>Add Worker Post</h2>
+      <label for="workerPost">Worker post:</label>
+      <input type="text" id="workerPost" name="workerPost" placeholder="Enter worker post" required>
+      <input type="submit" value="Add Worker Post">
+    </form>
+
+    <form id="worker-form">
+      <h2>Add Worker</h2>
+      <label for="workerName">Worker name:</label>
+      <input type="text" id="workerName" name="workerName" placeholder="Enter worker name" required>
+      <label for="worker-post">Worker password:</label>
+      <input type="password" id="workerPassword" name="workerPassword" placeholder="Enter worker password" required>
+      <label for="worker-post">Worker post:</label>
+      <select id="worker-post" name="worker-post" required></select>
+      <input type="submit" value="Add Worker">
+    </form>
+
+    <form id="device-type-form">
+      <h2>Add New Device Type</h2>
+      <label for="deviceType">Device type:</label>
+      <input type="text" id="deviceType" name="deviceType" placeholder="Enter device type" required>
+      <input type="submit" value="Add Device Type">
+    </form>
+
+    <form id="device-manufacturer-form">
+      <h2>Add New Device manufacturer</h2>
+      <label for="device-manufacturer">Device manufacturer:</label>
+      <input type="text" id="device-manufacturer" name="device-manufacturer" placeholder="Enter device manufacturer" required>
+      <label for="device-type">Device type:</label>
+      <select id="device-type" name="device-type" required></select>
+      <input type="submit" value="Add Device Manufacturer">
+    </form>
+
+    <div id="orders-div">
+      <table id="orders-table"></table>
+    </div>
+
+    <div id="control-panel">
+      <form id="orders-by-date">
+        <h2>Get orders after given date</h2>
+        <label for="orders-datetime">Date:</label>
+        <input type="datetime-local" id="orders-datetime" name="orders-datetime" required>
+        <input type="submit" value="Load orders">
+      </form>
+      <div id="finished-orders-div">
+        <button id="finished-orders-button" onclick="loadFinishedOrders()">Show finished orders</button>
+      </div>
+    </div>
+  </body>
+</html>
