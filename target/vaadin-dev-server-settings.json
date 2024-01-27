@@ -1,0 +1,17 @@
+{
+  "frontendFolder": "D:/Ivan/Programming/spring_app/spring/project/./frontend",
+  "themeFolder": "themes",
+  "themeResourceFolder": "D:/Ivan/Programming/spring_app/spring/project/./frontend/generated/jar-resources",
+  "staticOutput": "D:/Ivan/Programming/spring_app/spring/project/target/classes/META-INF/VAADIN/webapp/VAADIN/static",
+  "generatedFolder": "generated",
+  "statsOutput": "D:\\Ivan\\Programming\\spring_app\\spring\\project\\target\\classes\\META-INF\\VAADIN\\config",
+  "frontendBundleOutput": "D:\\Ivan\\Programming\\spring_app\\spring\\project\\target\\classes\\META-INF\\VAADIN\\webapp",
+  "devBundleOutput": "D:/Ivan/Programming/spring_app/spring/project/target/dev-bundle/webapp",
+  "devBundleStatsOutput": "D:/Ivan/Programming/spring_app/spring/project/target/dev-bundle/config",
+  "jarResourcesFolder": "D:/Ivan/Programming/spring_app/spring/project/./frontend/generated/jar-resources",
+  "themeName": "flowcrmtutorial",
+  "clientServiceWorkerSource": "D:\\Ivan\\Programming\\spring_app\\spring\\project\\target\\sw.ts",
+  "pwaEnabled": false,
+  "offlineEnabled": false,
+  "offlinePath": "'offline.html'"
+}
