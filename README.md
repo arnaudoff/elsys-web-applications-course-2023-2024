@@ -1,1 +1,1 @@
-# fitness-app-backend
+# Repository containing student homeworks/course projects
