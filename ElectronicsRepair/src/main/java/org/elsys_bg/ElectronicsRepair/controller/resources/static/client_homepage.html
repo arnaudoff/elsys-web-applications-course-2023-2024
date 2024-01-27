@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="OOP webapp client homepage" content="OOP">
+    <meta name="keywords" content="HTML, CSS, JavaScript, Java">
+    <meta name="OOP" content="OOP">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Homepage</title>
+
+    <script>
+      let clientName = "__CLIENT_NAME__";
+      let orderFormId = "order-form";
+      let reviewFormId = "review-form";
+      let deviceTypeAndManufacturerId = "device-type-manufacturer";
+      let deviceModelId = "device-model";
+      let orderDescriptionId = "order-description";
+      let reviewTextId = "review";
+      let orderForm;
+      let reviewForm;
+      let deviceTypeAndManufacturer;
+
+      function initialize(){
+        orderForm = document.getElementById(orderFormId);
+        deviceTypeAndManufacturer = document.getElementById(deviceTypeAndManufacturerId);
+        reviewForm = document.getElementById(reviewFormId);
+
+        loadDeviceTypesAndManufacturers();
+
+        orderForm.addEventListener("submit", function(event){
+          event.preventDefault();
+          let deviceModel = document.getElementById(deviceModelId).value;
+          let orderDescription = document.getElementById(orderDescriptionId).value;
+
+          if(checkStringForSQLInjection(deviceModel)){
+            window.alert("ERR: Device model string contains sql injections");
+          }else if(checkStringForSQLInjection(orderDescription)){
+            window.alert("ERR: Device model string contains sql injections");
+          }else{
+              const xhr = new XMLHttpRequest();
+              let data = {
+                clientName:clientName,
+                supportedDevice:deviceTypeAndManufacturer.value,
+                deviceModel:deviceModel,
+                orderDescription:orderDescription
+              };
+              let postData = JSON.stringify(data);
+
+              xhr.open('POST', '/api/v1/orders/add_order', false);
+              xhr.setRequestHeader("Content-Type", "application/json");
+              xhr.onload = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  switch(this.responseText){
+                    case "ORDER_ADDED":
+                      window.alert("Order was added");
+                      break;
+                    case "ORDER_NOT_ADDED":
+                      window.alert("Order could not be added");
+                      break;
+                    default:
+                      window.alert(this.responseText);
+                  }
+                }else if(this.status == 500){
+                  window.alert(this.responseText);
+                }
+              };
+
+              xhr.send(postData);
+            }
+          });
+
+        reviewForm.addEventListener("submit", function(event){
+          event.preventDefault();
+          let reviewText = document.getElementById(reviewTextId).value;
+
+          if(checkStringForSQLInjection(reviewText)){
+            window.alert("ERR: Review text contains sql injections");
+          }else{
+            const xhr = new XMLHttpRequest();
+            let data = {
+              clientName:clientName,
+              reviewText:reviewText
+            };
+            let postData = JSON.stringify(data);
+
+            xhr.open('POST', '/api/v1/reviews/add_review', false);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onload = function(){
+              if(this.readyState == 4 && this.status == 200){
+                switch(this.responseText){
+                  case "REVIEW_ADDED":
+                    window.alert("Review was added");
+                    break;
+                  case "REVIEW_NOT_ADDED":
+                    window.alert("ERR: Review could not be added");
+                    break;
+                  default:
+                    window.alert(this.responseText);
+                }
+              }else if(this.status == 500){
+                window.alert(this.responseText);
+              }
+            };
+
+            xhr.send(postData);
+          }
+        });
+      }
+
+      function loadDeviceTypesAndManufacturers(){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', '/api/v1/supported_devices/getAll', false);
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            deviceTypeAndManufacturer.innerHTML = "";
+            this.responseText.split(";").forEach(deviceTypeManufacturer => {
+              if(deviceTypeManufacturer != ""){
+                let deviceTypeManufacturerOption = document.createElement("option");
+                deviceTypeManufacturerOption.text = deviceTypeManufacturer;
+                deviceTypeManufacturerOption.value = deviceTypeManufacturer;
+                deviceTypeAndManufacturer.add(deviceTypeManufacturerOption);
+              }
+            });
+          }else if(this.status == 500){
+            window.alert("ERR: " + this.responseText);
+          }
+        };
+
+        xhr.send();
+      }
+
+      function checkStringForSQLInjection(string){
+        const xhr = new XMLHttpRequest();
+        let data = {
+          string:string,
+        };
+        let postData = JSON.stringify(data);
+
+        xhr.open('POST', '/api/v1/check_string_sql_injections', false);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onload = function(){
+          if(this.readyState == 4 && this.status == 200){
+            switch(this.responseText){
+              case "INJECTIONS":
+                return true;
+                break;
+              case "NO_INJECTIONS":
+                return false;
+                break;
+              default:
+                window.alert("Error: " + this.responseText);
+            }
+          }
+        };
+
+        xhr.send(postData);
+      }
+    </script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+        padding: 20px;
+      }
+
+      h1 {
+        text-align: left;
+      }
+
+      form {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-bottom: 20px;
+        max-width: 400px;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 10px;
+        margin-top: 10px;
+      }
+
+      input[type="text"],
+      input[type="submit"] {
+        width: 95%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      input[type="submit"] {
+        background-color: #4CAF50;
+        color: #fff;
+        cursor: pointer;
+        width: auto;
+        margin-left: 0;
+        margin-right: 0;
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body onload="initialize()">
+  <form id="order-form">
+    <h2>Add Order</h2>
+
+    <label for="device-type-manufacturer">Device type and manufacturer:</label>
+    <select id="device-type-manufacturer" name="device-type-manufacturer" required></select>
+
+    <label for="device-model">Model:</label>
+    <input type="text" id="device-model" name="device-model" placeholder="Enter device model" required>
+
+    <label for="order-description">Description:</label>
+    <input type="text" id="order-description" name="order-description" placeholder="Enter order description" required>
+
+    <input type="submit" value="Add order">
+  </form>
+
+  <form id="review-form">
+    <h2>Leave a Review</h2>
+    <input type="text" id="review" name="review" placeholder="Enter review" required>
+    <input type="submit" value="Submit review">
+  </form>
+  </body>
+</html>

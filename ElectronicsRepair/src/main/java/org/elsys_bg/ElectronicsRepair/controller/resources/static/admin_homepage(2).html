@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="OOP webapp admin homepage" content="OOP">
+  <meta name="keywords" content="HTML, CSS, JavaScript, Java">
+  <meta name="OOP" content="OOP">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Homepage</title>
+
+  <script>
+    var workerPostFormId = "worker-post-form";
+    var workerFormId = "worker-form";
+    var deviceTypeFormId = "device-type-form";
+    var deviceBrandFormId = "device-brand-form";
+    var workerPostForm;
+    var workerForm;
+    var deviceTypeForm;
+    var deviceBrandForm;
+
+    function initialize(){
+      workerPostForm = document.getElementById(workerPostFormId);
+      workerForm = document.getElementById(workerFormId);
+      deviceTypeForm = document.getElementById(deviceTypeFormId);
+      deviceBrandForm = document.getElementById(deviceBrandFormId);
+
+      loadWorkerPosts();
+
+      workerPostForm.addEventListener("submit", function(event){
+        event.preventDefault();
+
+        var workerPost = document.getElementById("workerPost").value;
+
+        if(checkStringForSQLInjection(workerPost)){
+          window.alert("ERR: Worker post string contains sql injections");
+        }else{
+          const xhr = new XMLHttpRequest();
+
+          var data = {
+            workerPost:workerPost
+          };
+          var postData = JSON.stringify(data);
+
+          xhr.open('POST', '/api/v1/admins/add_worker_post', true);
+          xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.onload = function(){
+            if(this.readyState == 4 && this.status == 200){
+              switch(this.responseText){
+                case "WORKER_POST_ADDED":
+                  window.alert("Worker post \"" + workerPost + "\" added to system");
+                  break;
+                default:
+                  console.log("ERROR RECEIVED: " + this.responseText);
+                  window.alert(this.responseText);
+              }
+            }
+          };
+
+          xhr.send(postData);
+        }
+      });
+
+      workerForm.addEventListener("submit", function(event){
+        event.preventDefault();
+
+        var workerName = document.getElementById("workerName").value;
+        var workerPassword = document.getElementById("workerPassword").value;
+        var workerPost = document.getElementById("worker-post").value;
+
+        if(checkStringForSQLInjection(workerPost)){
+          window.alert("ERR: Worker post string contains sql injections");
+        }else if(checkForSQLInjections(workerName, workerPassword)){
+          window.alert("ERR: Worker credentials contain sql injections");
+        }else{
+          const xhr = new XMLHttpRequest();
+
+          var workerCredentials = {
+            workerName:workerName,
+            workerPassword:workerPassword,
+            workerPost:workerPost
+          };
+          var workerData = JSON.stringify(workerCredentials);
+
+          xhr.open('POST', '/api/v1/admins/add_worker', true);
+          xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.onload = function(){
+            if(this.readyState == 4 && this.status == 200){
+              switch(this.responseText){
+                case "WORKER_ADDED":
+                  window.alert("Worker \"" + workerName + "\" added to system");
+                  break;
+                default:
+                  console.log("ERROR RECEIVED: " + this.responseText);
+                  window.alert(this.responseText);
+              }
+            }
+          };
+
+          xhr.send(workerData);
+        }
+      });
+    }
+
+    function loadWorkerPosts(){
+      const xhr = new XMLHttpRequest();
+
+      xhr.open('GET', '/api/v1/worker_posts/getAll', false);
+      xhr.onload = function(){
+        if(this.readyState == 4 && this.status == 200){
+          var workerPostMenu = document.getElementById("worker-post");
+
+          workerPostMenu.innerHTML = "";
+          this.responseText.split(";").forEach(workerPost => {
+            if(workerPost != ""){
+              var workerPostOption = document.createElement("option");
+              workerPostOption.text = workerPost;
+              workerPostOption.value = workerPost;
+              workerPostMenu.add(workerPostOption);
+            }
+          });
+        }else if(this.status == 500){
+          window.alert("ERR: " + this.responseText);
+        }
+      };
+
+      xhr.send();
+    }
+
+    function checkStringForSQLInjection(string){
+      const xhr = new XMLHttpRequest();
+      var data = {
+        string:string,
+      };
+      var postData = JSON.stringify(data);
+
+      xhr.open('POST', '/api/v1/check_string_sql_injections', false);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.onload = function(){
+        if(this.readyState == 4 && this.status == 200){
+          switch(this.responseText){
+            case "INJECTIONS":
+              return true;
+              break;
+            case "NO_INJECTIONS":
+              return false;
+              break;
+            default:
+              window.alert("Error: " + this.responseText);
+          }
+        }
+      };
+
+      xhr.send(postData);
+    }
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: left;
+    }
+
+    form {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-bottom: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      /*display: flex;*/
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .form-group {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    label {
+      flex-basis: 30%;
+      margin-right: 10px;
+      text-align: right;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      flex-basis: 70%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    input[type="submit"] {
+      background-color: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+      width: auto;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body onload="initialize()">
+<h1>Worker Management</h1>
+
+<form id="worker-post-form">
+  <h2>Add Worker Post</h2>
+  <div class="form-group">
+    <label for="workerPost">Worker post:</label>
+    <input type="text" id="workerPost" name="workerPost" placeholder="Enter worker post" required>
+  </div>
+  <input type="submit" value="Add Worker Post">
+</form>
+
+<form id="worker-form">
+  <h2>Add Worker</h2>
+  <div class="form-group">
+    <label for="workerName">Worker name:</label>
+    <input type="text" id="workerName" name="workerName" placeholder="Enter worker name" required>
+  </div>
+  <div class="form-group">
+    <label for="workerPassword">Worker password:</label>
+    <input type="password" id="workerPassword" name="workerPassword" placeholder="Enter worker password" required>
+  </div>
+  <div class="form-group">
+    <label for="worker-post">Worker post:</label>
+    <select id="worker-post" name="worker-post" required></select>
+  </div>
+  <input type="submit" value="Add Worker">
+</form>
+
+<form id="device-type-form">
+  <h2>Add New Device Type</h2>
+  <div class="form-group">
+    <label for="deviceType">Device type:</label>
+    <input type="text" id="deviceType" name="deviceType" placeholder="Enter device type" required>
+  </div>
+  <input type="submit" value="Add Device Type">
+</form>
+
+<form id="device-brand-form">
+  <h2>Add New Device Brand</h2>
+  <div class="form-group">
+    <label for="deviceBrand">Device brand:</label>
+    <input type="text" id="deviceBrand" name="deviceBrand" placeholder="Enter device brand" required>
+  </div>
+  <input type="submit" value="Add Device Brand">
+</form>
+</body>
+</html>
